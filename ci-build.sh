@@ -6,9 +6,9 @@ brew install xcodegen
 
 cd ios
 xcodegen generate
-ls -la
-echo "--- project.pbxproj (head) ---"
-head -25 KISS.xcodeproj/project.pbxproj || true
+# xcodegen 2.45 stempelt objectVersion=77 (Xcode 16) -> auf 56 senken, damit Xcode 15.4 es lesen kann
+sed -i.bak 's/objectVersion = 77;/objectVersion = 56;/' KISS.xcodeproj/project.pbxproj
+rm -f KISS.xcodeproj/project.pbxproj.bak
 echo "--- xcodebuild -list ---"
 xcodebuild -list -project KISS.xcodeproj || true
 
