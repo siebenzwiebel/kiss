@@ -1,0 +1,36 @@
+name: build-ios
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build unsigned .ipa
+        working-directory: ios
+        run: |
+          set -e
+          xcodebuild -project KISS.xcodeproj -scheme KISS -configuration Release \
+            -sdk iphoneos -archivePath "$PWD/build/KISS.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+          mkdir -p Payload
+          cp -R build/KISS.xcarchive/Products/Applications/KISS.app Payload/
+          zip -qry KISS-unsigned.ipa Payload
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: KISS-unsigned-ipa
+          path: ios/KISS-unsigned.ipa
+          if-no-files-found: error
