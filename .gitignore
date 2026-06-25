@@ -1,0 +1,7 @@
+ios/KISS.xcodeproj/
+ios/build/
+ios/Sources/Info.plist
+DerivedData/
+Payload/
+*.ipa
+.DS_Store

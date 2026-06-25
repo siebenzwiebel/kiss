@@ -1,0 +1,24 @@
+name: KISS
+options:
+  bundleIdPrefix: dev.drewers
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  KISS:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: K.I.S.S.
+        UIBackgroundModes: [bluetooth-central]
+        NSBluetoothAlwaysUsageDescription: "Verbindung zum K.I.S.S.-Gerät über Bluetooth."
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.drewers.kiss
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
