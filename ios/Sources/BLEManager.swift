@@ -23,6 +23,9 @@ final class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     @Published var sent = 0
     @Published var recv = 0
     @Published var pending = false
+    /// Anzahl wartender Kuesse. Der Relay liefert sie seit 09/2026 als
+    /// kuss_wartend; frueher gab es nur das Ja/Nein in kuss_pending.
+    @Published var wartend = 0
     @Published var log: [String] = []
 
     let base = "https://kuss.drewers.dev"
@@ -142,14 +145,25 @@ final class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         URLSession.shared.dataTask(with: r) { data, _, _ in
             guard let data = data,
                   let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-            let p = (j["kuss_pending"] as? Bool) ?? false
+            // Rueckfall auf den alten Boolean, falls die App vor dem Server
+            // ausgerollt wird: dann ist "es wartet etwas" = 1.
+            let w = (j["kuss_wartend"] as? Int)
+                ?? (((j["kuss_pending"] as? Bool) == true) ? 1 : 0)
             let s = (j["sent_count"] as? Int) ?? 0
             let rc = (j["received_from_count"] as? Int) ?? 0
-            DispatchQueue.main.async { self.pending = p; self.sent = s; self.recv = rc }
-            self.writeIn(p ? 1 : 0, s, rc)
+            DispatchQueue.main.async {
+                self.pending = w > 0
+                self.wartend = w
+                self.sent = s
+                self.recv = rc
+            }
+            self.writeIn(w, s, rc)
         }.resume()
     }
 
+    /// Erstes Feld ist seit 09/2026 eine ANZAHL, kein Ja/Nein mehr. Das
+    /// Drahtformat "a,b,c" bleibt; alte Firmware prueft auf != 0 und sieht
+    /// eine 3 genauso als wahr an wie eine 1.
     private func writeIn(_ p: Int, _ s: Int, _ r: Int) {
         guard let ch = inChar, let per = peripheral, per.state == .connected else { return }
         let str = "\(p),\(s),\(r)"
