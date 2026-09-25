@@ -30,8 +30,11 @@ struct ContentView: View {
                     SecureField("Token B", text: $tokenB)
                 }
                 Section("Status") {
+                    // Seit Protokoll v2 ist das Geraet die meiste Zeit bewusst
+                    // getrennt, damit sein Funkchip schlafen kann. "getrennt"
+                    // waere hier eine Fehlmeldung.
                     HStack { Text("Stick"); Spacer()
-                        Text(ble.connected ? "verbunden" : "getrennt")
+                        Text(ble.connected ? "verbunden" : "schläft")
                             .foregroundColor(ble.connected ? .green : .secondary) }
                     HStack { Text("Kuss offen"); Spacer(); Text(ble.pending ? "JA" : "nein") }
                     HStack { Text("gesendet \(ble.sent)"); Spacer(); Text("empfangen \(ble.recv)") }
