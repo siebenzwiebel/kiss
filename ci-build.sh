@@ -2,7 +2,9 @@
 set -euxo pipefail
 
 xcodebuild -version
-brew install xcodegen
+# Branch ui-v2: erst Simulator-Screenshots (installiert xcodegen selbst)
+bash ci-screenshots.sh
+rm -rf ios/build
 
 cd ios
 xcodegen generate
@@ -20,4 +22,6 @@ cd ..
 mkdir -p Payload
 cp -R ios/build/KISS.xcarchive/Products/Applications/KISS.app Payload/
 zip -qry KISS-unsigned.ipa Payload
+# Nur ui-v2: Screenshots ins hochgeladene Archiv, vor dem Installieren wieder entfernen
+zip -qry KISS-unsigned.ipa shots
 echo "fertig: $(ls -la KISS-unsigned.ipa)"
