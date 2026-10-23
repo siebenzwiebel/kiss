@@ -24,7 +24,7 @@ enum K {
     static let mint = Color(red: 0x4F/255, green: 0xD6/255, blue: 0xAE/255)
 }
 
-/// Fuer Screenshots im Simulator: Startargument `-shot welcome|device|code|connect|home|settings`
+/// Fuer Screenshots im Simulator: Startargument `-shot welcome|code|connect|home|settings`
 /// zeigt den Bildschirm mit Beispielzahlen, ohne Geraet und ohne Server.
 let shot = UserDefaults.standard.string(forKey: "shot")
 
@@ -35,8 +35,8 @@ struct RootView: View {
         ZStack {
             K.bg.ignoresSafeArea()
             if let s = shot {
-                if ["welcome", "device", "code", "connect"].contains(s) {
-                    SetupView(step: ["welcome", "device", "code", "connect"].firstIndex(of: s)!)
+                if ["welcome", "code", "connect"].contains(s) {
+                    SetupView(step: ["welcome", "code", "connect"].firstIndex(of: s)!)
                 } else {
                     HomeView(showSettings: s == "settings")
                 }
@@ -65,13 +65,12 @@ struct SetupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Dots(count: 4, current: step).padding(.top, 24)
+            Dots(count: 3, current: step).padding(.top, 24)
             Spacer()
             Group {
                 switch step {
                 case 0: welcome
-                case 1: device
-                case 2: codeEntry
+                case 1: codeEntry
                 default: connect
                 }
             }
@@ -87,35 +86,15 @@ struct SetupView: View {
             Text("K · I · S · S").font(.system(size: 34, weight: .heavy, design: .rounded))
             Text("Ein Druck aufs Herz, und drüben zählt es eins hoch.\nWir richten das jetzt zusammen ein. Dauert eine Minute.")
                 .multilineTextAlignment(.center).foregroundColor(K.muted)
-            Big("Los geht's") { step = 1 }.padding(.top, 12)
-        }
-    }
-
-    var device: some View {
-        VStack(spacing: 22) {
-            Title(n: 1, "Welches Gerät ist deins?")
-            HStack(spacing: 14) {
-                ForEach(["a", "b"], id: \.self) { d in
-                    Button { dev = d; step = 2 } label: {
-                        VStack(spacing: 8) {
-                            Text(d.uppercased()).font(.system(size: 64, weight: .heavy, design: .rounded))
-                            Text("Gerät \(d.uppercased())").font(.subheadline).foregroundColor(K.muted)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 28)
-                        .background(RoundedRectangle(cornerRadius: 22).fill(dev == d ? K.pink.opacity(0.25) : K.card))
-                        .overlay(RoundedRectangle(cornerRadius: 22).stroke(dev == d ? K.pink : .clear, lineWidth: 2))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            Back { step = 0 }
+            // Jana hat immer Geraet A; B stellt Steven bei Bedarf im Zahnrad um.
+            Big("Los geht's") { dev = "a"; step = 1 }.padding(.top, 12)
         }
     }
 
     var codeEntry: some View {
         VStack(spacing: 22) {
-            Title(n: 2, "Code eingeben")
-            Text("Den Code für Gerät \(dev.uppercased()) bekommst du von Steven.")
+            Title(n: 1, "Code eingeben")
+            Text("Den Code bekommst du von Steven.")
                 .multilineTextAlignment(.center).foregroundColor(K.muted)
             TextField("Code", text: $code)
                 .textInputAutocapitalization(.never)
@@ -128,13 +107,13 @@ struct SetupView: View {
                 Text(e).font(.footnote).foregroundColor(K.pinkSoft).multilineTextAlignment(.center)
             }
             Big(checking ? "Prüfe …" : "Prüfen", disabled: code.isEmpty || checking) { verify() }
-            Back { step = 1 }
+            Back { step = 0 }
         }
     }
 
     var connect: some View {
         VStack(spacing: 22) {
-            Title(n: 3, "Gerät verbinden")
+            Title(n: 2, "Gerät verbinden")
             ZStack {
                 Circle().fill(ble.connected ? K.mint.opacity(0.2) : K.card).frame(width: 150, height: 150)
                 if ble.connected {
@@ -146,7 +125,7 @@ struct SetupView: View {
             Text(ble.connected ? "Verbunden." : "Drück einmal auf das Herz am Gerät.\nDas iPhone findet es dann von selbst.")
                 .multilineTextAlignment(.center).foregroundColor(K.muted)
             Big("Fertig") { setupDone = true }
-            Back { step = 2 }
+            Back { step = 1 }
         }
     }
 
@@ -165,7 +144,7 @@ struct SetupView: View {
                 case 200:
                     UserDefaults.standard.set(c, forKey: "token_\(dev)")
                     ble.pollState()
-                    step = 3
+                    step = 2
                 case 401, 403: error = "Der Code passt nicht. Groß- und Kleinschreibung beachten."
                 default: error = "Keine Verbindung zum Server. Internet an?"
                 }
@@ -209,7 +188,7 @@ struct HomeView: View {
                 VStack(spacing: 6) {
                     Text(waiting == 1 ? "1 Kuss wartet" : "\(waiting) Küsse warten")
                         .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    Text("Drück am Gerät aufs Herz, um ihn abzuholen.").font(.footnote)
+                    Text(waiting == 1 ? "Halt am Gerät das Herz gedrückt, um ihn abzuholen." : "Halt am Gerät das Herz gedrückt, um sie abzuholen.").font(.footnote)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 18)
                 .background(RoundedRectangle(cornerRadius: 22).fill(K.pink))
@@ -330,7 +309,7 @@ struct Title: View {
     init(n: Int, _ text: String) { self.n = n; self.text = text }
     var body: some View {
         VStack(spacing: 6) {
-            Text("SCHRITT \(n) VON 3").font(.caption.weight(.bold)).foregroundColor(K.pinkSoft)
+            Text("SCHRITT \(n) VON 2").font(.caption.weight(.bold)).foregroundColor(K.pinkSoft)
             Text(text).font(.system(size: 28, weight: .heavy, design: .rounded)).multilineTextAlignment(.center)
         }
     }
