@@ -15,7 +15,7 @@ xcrun simctl install "$UDID" "$APP"
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 || true
 cd ..
 mkdir -p shots
-for s in welcome code connect guide1 guide2 guide3 guide4 home waiting settings; do
+for s in code welcome connect guide1 guide2 guide3 guide4 home waiting settings; do
   xcrun simctl terminate "$UDID" dev.drewers.kiss || true
   xcrun simctl launch "$UDID" dev.drewers.kiss -shot "$s"
   sleep 6

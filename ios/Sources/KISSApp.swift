@@ -7,7 +7,8 @@ struct KISSApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(ble)
-                .onAppear { if shot == nil { ble.start() } }
+                // Bluetooth erst nach dem Code starten, sonst verraet die Systemabfrage das Geraet
+                .onAppear { if shot == nil && UserDefaults.standard.bool(forKey: "setupDone") { ble.start() } }
                 .preferredColorScheme(.light)
         }
     }
@@ -53,8 +54,8 @@ struct RootView: View {
     var body: some View {
         Group {
             if let s = shot {
-                if ["welcome", "code", "connect"].contains(s) {
-                    SetupView(step: ["welcome", "code", "connect"].firstIndex(of: s)!)
+                if ["code", "welcome", "connect"].contains(s) {
+                    SetupView(step: ["code", "welcome", "connect"].firstIndex(of: s)!)
                 } else if s.hasPrefix("guide") {
                     GuideView(page: (Int(s.dropFirst(5)) ?? 1) - 1) {}
                 } else if s == "settings" {
@@ -72,7 +73,7 @@ struct RootView: View {
     }
 }
 
-// MARK: Einrichtung -- gefuehrt, zum gemeinsamen Durchgehen
+// MARK: Einrichtung -- erst der Code (verraet nichts), dann gefuehrt zum gemeinsamen Durchgehen
 
 struct SetupView: View {
     @EnvironmentObject var ble: BLEManager
@@ -91,15 +92,14 @@ struct SetupView: View {
             GuideView { setupDone = true }
         } else {
             ZStack {
-                [K.cover, K.rose, K.mint][step].ignoresSafeArea()
-                if step == 0 { HeartPattern().ignoresSafeArea() }
+                [K.cover, K.cover, K.mint][step].ignoresSafeArea()
+                if step == 1 { HeartPattern().ignoresSafeArea() }
                 VStack(spacing: 0) {
-                    if step > 0 { Dots(count: 2, current: step - 1).padding(.top, 24) }
                     Spacer()
                     Group {
                         switch step {
-                        case 0: welcome
-                        case 1: codeEntry
+                        case 0: codeEntry
+                        case 1: welcome
                         default: connect
                         }
                     }
@@ -118,16 +118,14 @@ struct SetupView: View {
             Text("Ein Knopf. Ein Kuss.").font(F.body(19))
             Text("Wir richten das jetzt zusammen ein.\nDauert eine Minute.")
                 .font(F.body(16)).foregroundColor(K.muted).multilineTextAlignment(.center)
-            // Jana hat immer Geraet A; B stellt Steven bei Bedarf im Zahnrad um.
-            Big("Los geht's") { dev = "a"; step = 1 }.padding(.top, 10)
+            Big("Los geht's") { step = 2 }.padding(.top, 10)
         }
     }
 
+    /// Erster Bildschirm nach der Installation: nur Logo und Code. Bis zur Uebergabe bleibt alles dahinter zu.
     var codeEntry: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Title(n: 1, "Code\neingeben.")
-            Text("Den Code bekommst du von mir. Groß- und Kleinschreibung zählt.")
-                .font(F.body()).foregroundColor(K.muted)
+        VStack(spacing: 20) {
+            Text("K.I.S.S.").font(F.display(44)).foregroundColor(K.pink)
             TextField("Code", text: $code)
                 .textInputAutocapitalization(.never)
                 .disableAutocorrection(true)
@@ -137,16 +135,18 @@ struct SetupView: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color.white))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(K.ink.opacity(0.12)))
             if let e = error {
-                Text(e).font(F.bold(15)).foregroundColor(K.pink)
+                Text(e).font(F.bold(15)).foregroundColor(K.pink).multilineTextAlignment(.center)
             }
-            Big(checking ? "Prüfe …" : "Prüfen", disabled: code.isEmpty || checking) { verify() }
-            Back { step = 0 }
+            Big(checking ? "Prüfe …" : "Öffnen", disabled: code.isEmpty || checking) { verify() }
         }
     }
 
     var connect: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Title(n: 2, "Gerät\nverbinden.")
+            VStack(alignment: .leading, spacing: 8) {
+                Eyebrow("Noch ein Schritt")
+                Text("Gerät\nverbinden.").font(F.display(32)).lineSpacing(2)
+            }
             HStack {
                 Spacer()
                 ZStack {
@@ -180,9 +180,12 @@ struct SetupView: View {
                 checking = false
                 switch st {
                 case 200:
-                    UserDefaults.standard.set(c, forKey: "token_\(dev)")
+                    // Jana hat immer Geraet A; B stellt Steven bei Bedarf im Zahnrad um.
+                    dev = "a"
+                    UserDefaults.standard.set(c, forKey: "token_a")
+                    ble.start()
                     ble.pollState()
-                    step = 2
+                    step = 1
                 case 401, 403: error = "Der Code passt nicht. Groß- und Kleinschreibung beachten."
                 default: error = "Keine Verbindung zum Server. Internet an?"
                 }
@@ -611,17 +614,6 @@ struct Dots: View {
                 Capsule().fill(i == current ? K.pink : K.ink.opacity(0.15))
                     .frame(width: i == current ? 22 : 8, height: 8)
             }
-        }
-    }
-}
-
-struct Title: View {
-    let n: Int, text: String
-    init(n: Int, _ text: String) { self.n = n; self.text = text }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Eyebrow("Schritt \(n) von 2")
-            Text(text).font(F.display(32)).lineSpacing(2)
         }
     }
 }
