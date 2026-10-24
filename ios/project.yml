@@ -15,6 +15,7 @@ targets:
         UIBackgroundModes: [bluetooth-central]
         NSBluetoothAlwaysUsageDescription: "Verbindung zum K.I.S.S.-Gerät über Bluetooth."
         UILaunchScreen: {}
+        UIAppFonts: [Bungee-Regular.ttf, AtkinsonHyperlegible-Regular.ttf, AtkinsonHyperlegible-Bold.ttf, PressStart2P-Regular.ttf]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.drewers.kiss
